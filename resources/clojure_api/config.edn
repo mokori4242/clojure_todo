@@ -2,7 +2,14 @@
  {:duct.core/project-ns clojure-api
 
   :duct.router/ataraxy
-  {:routes {[:get "/"] [:clojure-api.handler/index]}}
+  {:routes {[:get "/"] [:clojure-api.handler/index]
+            [:get "/entries"] [:todo.handler.entries/list]
+
+            [:post "/entries" {{:keys [description]} :body-params}]
+            [:todo.handler.entries/create description]
+
+            [:get "/entries/" id] [:todo.handler.entries/find ^int id]
+            [:delete "/entries/" id] [:todo.handler.entries/destory ^int id]}}
   [:duct.handler.static/ok :clojure-api.handler/index]
   {:body {:entries "/entries"}}
   :duct.migrator/ragtime
@@ -10,7 +17,26 @@
 
   [:duct.migrator.ragtime/sql :clojure-api.migration/create-entries]
   {:up ["CREATE TABLE entries (id INTEGER PRIMARY KEY, description TEXT)"]
-   :down ["DROP TABLE entries"]}}
+   :down ["DROP TABLE entries"]}
+
+ [:duct.handler.sql/query :todo.handler.entries/list]
+ {:sql ["SELECT * FROM entries"]
+  :hrefs {:href "/entries/{id}"}}
+
+  [:duct.handler.sql/insert :todo.handler.entries/create]
+  {:request {[_ description] :ataraxy/result}
+   :sql     ["INSERT INTO entries (description) VALUES (?)" description]
+   :location "/entries/{last_insert_rowid}"}
+
+  [:duct.handler.sql/query-one :todo.handler.entries/find]
+  {:request {[_ id] :ataraxy/result}
+   :sql     ["SELECT * FROM entries WHERE id = ?" id]
+   :hrefs   {:href "/entries/{id}"}}
+
+  [:duct.handler.sql/execute :todo.handler.entries/destory]
+  {:request {[_ id] :ataraxy/result}
+   :sql     ["DELETE FROM entries WHERE id = ?" id]}
+  }
 
  :duct.profile/dev   #duct/include "dev"
  :duct.profile/local #duct/include "local"
