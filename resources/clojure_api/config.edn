@@ -1,0 +1,23 @@
+{:duct.profile/base
+ {:duct.core/project-ns clojure-api
+
+  :duct.router/ataraxy
+  {:routes {[:get "/"] [:clojure-api.handler/index]}}
+  [:duct.handler.static/ok :clojure-api.handler/index]
+  {:body {:entries "/entries"}}
+  :duct.migrator/ragtime
+  {:migrations [#ig/ref :clojure-api.migration/create-entries]}
+
+  [:duct.migrator.ragtime/sql :clojure-api.migration/create-entries]
+  {:up ["CREATE TABLE entries (id INTEGER PRIMARY KEY, description TEXT)"]
+   :down ["DROP TABLE entries"]}}
+
+ :duct.profile/dev   #duct/include "dev"
+ :duct.profile/local #duct/include "local"
+ :duct.profile/prod  {}
+
+ :duct.module/logging {}
+ :duct.module.web/api
+ {}
+ :duct.module/sql
+ {}}
