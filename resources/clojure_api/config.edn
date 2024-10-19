@@ -9,15 +9,25 @@
             [:todo.handler.entries/create description]
 
             [:get "/entries/" id] [:todo.handler.entries/find ^int id]
-            [:delete "/entries/" id] [:todo.handler.entries/destory ^int id]}}
+            [:delete "/entries/" id] [:todo.handler.entries/destory ^int id]
+
+            [:post "/users" {{:keys [email password]} :body-params}]
+            [:clojure-api.handler.users/create email password]}}
+
   [:duct.handler.static/ok :clojure-api.handler/index]
   {:body {:entries "/entries"}}
+
   :duct.migrator/ragtime
-  {:migrations [#ig/ref :clojure-api.migration/create-entries]}
+  {:migrations [#ig/ref :clojure-api.migration/create-entries
+                #ig/ref :clojure-api.migration/create-users]}
 
   [:duct.migrator.ragtime/sql :clojure-api.migration/create-entries]
   {:up ["CREATE TABLE entries (id INTEGER PRIMARY KEY, description TEXT)"]
    :down ["DROP TABLE entries"]}
+
+  [:duct.migrator.ragtime/sql :clojure-api.migration/create-users]
+  {:up ["CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT UNIQUE, password TEXT)"]
+   :down ["DROP TABLE users"]}
 
  [:duct.handler.sql/query :todo.handler.entries/list]
  {:sql ["SELECT * FROM entries"]
@@ -36,6 +46,12 @@
   [:duct.handler.sql/execute :todo.handler.entries/destory]
   {:request {[_ id] :ataraxy/result}
    :sql     ["DELETE FROM entries WHERE id = ?" id]}
+
+  :duct.database/sql
+  {:connection-uri "jdbc:sqlite:db/dev.sqlite"}
+
+  :clojure-api.handler.users/create
+ {:db #ig/ref :duct.database/sql}
   }
 
  :duct.profile/dev   #duct/include "dev"
